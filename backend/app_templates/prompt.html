@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Prompt {{ prompt.path }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .text-area-container {
+            display: flex;
+            flex-direction: column;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: bold;
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #submitBtn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #submitBtn:hover {
+            background-color: #45a049;
+        }
+        #statusInfo {
+            display: block; /* Explicitly set to block */
+            visibility: hidden; /* Initially hidden */
+            padding: 10px;
+            text-align: center;
+            border-radius: 4px;
+            margin-top: 15px;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        #statusInfo.success,
+        #statusInfo.error {
+            visibility: visible;
+            opacity: 1;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+            border: 1px solid #d6e9c6;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+            border: 1px solid #ebccd1;
+        }
+    </style>
+</head>
+<body>
+    <div class="text-area-container">
+        <div class="input-group">
+            <label for="systemMessage">System Message</label>
+            <textarea id="systemMessage">{{ prompt.system_message }}</textarea>
+        </div>
+        <div class="input-group">
+            <label for="userMessage">User Message</label>
+            <textarea id="userMessage">{{ prompt.user_message }}</textarea>
+        </div>
+    </div>
+    <button id="submitBtn">Save</button>
+    <div id="statusInfo"></div>
+
+    <script>
+        const submitBtn = document.getElementById('submitBtn');
+        const system = document.getElementById('systemMessage');
+        const user = document.getElementById('userMessage');
+        const statusInfo = document.getElementById('statusInfo');
+
+        submitBtn.addEventListener('click', async () => {
+            const payload = {
+                system_message: system.value,
+                user_message: user.value
+            };
+
+            try {
+                const response = await fetch('/{{ prompt.path }}', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    statusInfo.textContent = 'Saved.';
+                    statusInfo.className = 'success';
+                    setTimeout(() => {
+                        statusInfo.textContent = '';
+                        statusInfo.className = '';
+                    }, 3000);
+                } else {
+                    const errorText = await response.text();
+                    statusInfo.textContent = `Saving failed: ${errorText}`;
+                    statusInfo.className = 'error';
+                }
+            } catch (error) {
+                statusInfo.textContent = 'Network error..';
+                statusInfo.className = 'error';
+            }
+        });
+    </script>
+</body>
+</html>

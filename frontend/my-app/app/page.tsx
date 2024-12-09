@@ -11,7 +11,7 @@ interface Prompt {
 }
 
 // Main Prompt Manager Component
-export default function Home() {
+export default function PromptManager() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
   const [newPrompt, setNewPrompt] = useState<Prompt>({
@@ -44,6 +44,14 @@ export default function Home() {
     // Validate input
     if (!newPrompt.path) {
       alert('Please provide an endpoint for the prompt!');
+      return;
+    }
+    if (newPrompt.path.startsWith('/')) {
+      alert("Don't start with the leading / when registering a prompt!")
+      return;
+    }
+    if (!/^[a-zA-Z0-9\._/-]+$/.test(newPrompt.path)) {
+      alert('Invalid endpoint path!')
       return;
     }
     if (!newPrompt.user_message) {
@@ -184,7 +192,6 @@ export default function Home() {
                 <input
                   disabled
                   value={editingPrompt.path}
-                  onChange={(e) => setEditingPrompt({...editingPrompt, path: e.target.value})}
                   className="w-full mb-2 p-2 border rounded"
                 />
                 <textarea
@@ -217,7 +224,7 @@ export default function Home() {
             ) : (
               // View Mode
               <div className="flex-grow">
-                <span>{prompt.path}</span>
+                <a href={`/${prompt.path}`}>{prompt.path}</a>
               </div>
             )}
 

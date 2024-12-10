@@ -1,7 +1,28 @@
-"use client"; // This is a client component
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import { Edit, Trash2, Save, X, Plus } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
+import Link from "next/link";
 
 // Prompt Interface
 interface Prompt {
@@ -20,6 +41,8 @@ export default function PromptManager() {
     user_message: ''
   });
   const [isCreatingPrompt, setIsCreatingPrompt] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [promptToDelete, setPromptToDelete] = useState<string | null>(null);
 
   // Fetch prompts from API
   useEffect(() => {
@@ -27,7 +50,8 @@ export default function PromptManager() {
       try {
         const response = await fetch('http://localhost:8000', {
           headers: {
-            'Content-Type': 'application/json'}
+            'Content-Type': 'application/json'
+          }
         });
         const data = await response.json();
         setPrompts(data);
@@ -121,6 +145,7 @@ export default function PromptManager() {
 
       if (response.ok) {
         setPrompts(prompts.filter(p => p.path !== path));
+        setIsDeleteDialogOpen(false);
       }
     } catch (error) {
       console.error('Failed to delete prompt:', error);
@@ -131,121 +156,152 @@ export default function PromptManager() {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Prompt Manager</h1>
-        <button
+        <Button
           onClick={() => setIsCreatingPrompt(true)}
-          className="bg-green-500 text-white p-2 rounded flex items-center"
+          className="flex items-center"
         >
           <Plus className="mr-2" size={16} /> Add Prompt
-        </button>
+        </Button>
       </div>
 
       {/* New Prompt Creation Form */}
       {isCreatingPrompt && (
-        <div className="bg-white shadow-md rounded-lg p-4 mb-4">
-          <input
-            value={newPrompt.path}
-            onChange={(e) => setNewPrompt({...newPrompt, path: e.target.value})}
-            className="w-full mb-2 p-2 border rounded"
-            placeholder="Endpoint"
-          />
-          <textarea
-            value={newPrompt.system_message || ''}
-            onChange={(e) => setNewPrompt({...newPrompt, system_message: e.target.value})}
-            className="w-full mb-2 p-2 border rounded h-32 resize-y"
-            placeholder="System Message Template"
-          />
-          <textarea
-            value={newPrompt.user_message}
-            onChange={(e) => setNewPrompt({...newPrompt, user_message: e.target.value})}
-            className="w-full mb-2 p-2 border rounded h-32 resize-y"
-            placeholder="User Message Template"
-          />
-          <div className="flex space-x-2">
-            <button
-              onClick={createPrompt}
-              className="bg-green-500 text-white p-2 rounded flex items-center"
-            >
-              <Save className="mr-2" size={16} /> Save
-            </button>
-            <button
-              onClick={() => {
-                setIsCreatingPrompt(false);
-                setNewPrompt({ path: '', system_message: '', user_message: '' });
-              }}
-              className="bg-gray-300 text-black p-2 rounded flex items-center"
-            >
-              <X className="mr-2" size={16} /> Cancel
-            </button>
-          </div>
-        </div>
+        <Card className="mb-4">
+          <CardContent className="pt-6">
+            <Input
+              value={newPrompt.path}
+              onChange={(e) => setNewPrompt({...newPrompt, path: e.target.value})}
+              className="mb-2"
+              placeholder="Endpoint"
+            />
+            <Textarea
+              value={newPrompt.system_message || ''}
+              onChange={(e) => setNewPrompt({...newPrompt, system_message: e.target.value})}
+              className="mb-2 h-32"
+              placeholder="System Message Template"
+            />
+            <Textarea
+              value={newPrompt.user_message}
+              onChange={(e) => setNewPrompt({...newPrompt, user_message: e.target.value})}
+              className="mb-2 h-32"
+              placeholder="User Message Template"
+            />
+            <div className="flex space-x-2">
+              <Button
+                onClick={createPrompt}
+                className="flex items-center"
+              >
+                <Save className="mr-2" size={16} /> Save
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setIsCreatingPrompt(false);
+                  setNewPrompt({ path: '', system_message: '', user_message: '' });
+                }}
+                className="flex items-center"
+              >
+                <X className="mr-2" size={16} /> Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <div className="grid gap-4">
         {prompts.map((prompt) => (
-          <div
-            key={prompt.path}
-            className="bg-white shadow-md rounded-lg p-4 flex justify-between items-center"
-          >
-            {editingPrompt?.path === prompt.path ? (
-              // Edit Mode
-              <div className="w-full">
-                <input
-                  disabled
-                  value={editingPrompt.path}
-                  className="w-full mb-2 p-2 border rounded"
-                />
-                <textarea
-                  value={editingPrompt.system_message || ''}
-                  onChange={(e) => setEditingPrompt({...editingPrompt, system_message: e.target.value})}
-                  className="w-full mb-2 p-2 border rounded h-32 resize-y"
-                  placeholder="System Message Template"
-                />
-                <textarea
-                  value={editingPrompt.user_message}
-                  onChange={(e) => setEditingPrompt({...editingPrompt, user_message: e.target.value})}
-                  className="w-full mb-2 p-2 border rounded h-32 resize-y"
-                  placeholder="User Message Template"
-                />
-                <div className="flex space-x-2">
-                  <button
-                    onClick={updatePrompt}
-                    className="bg-green-500 text-white p-2 rounded flex items-center"
-                  >
-                    <Save className="mr-2" size={16} /> Save
-                  </button>
-                  <button
-                    onClick={() => setEditingPrompt(null)}
-                    className="bg-gray-300 text-black p-2 rounded flex items-center"
-                  >
-                    <X className="mr-2" size={16} /> Cancel
-                  </button>
+          <Card key={prompt.path}>
+            <CardContent className="p-6 flex justify-between items-center">
+              {editingPrompt?.path === prompt.path ? (
+                // Edit Mode
+                <div className="w-full">
+                  <Input
+                    disabled
+                    value={editingPrompt.path}
+                    className="mb-2"
+                  />
+                  <Textarea
+                    value={editingPrompt.system_message || ''}
+                    onChange={(e) => setEditingPrompt({...editingPrompt, system_message: e.target.value})}
+                    className="mb-2 h-32"
+                    placeholder="System Message Template"
+                  />
+                  <Textarea
+                    value={editingPrompt.user_message}
+                    onChange={(e) => setEditingPrompt({...editingPrompt, user_message: e.target.value})}
+                    className="mb-2 h-32"
+                    placeholder="User Message Template"
+                  />
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={updatePrompt}
+                      className="flex items-center"
+                    >
+                      <Save className="mr-2" size={16} /> Save
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => setEditingPrompt(null)}
+                      className="flex items-center"
+                    >
+                      <X className="mr-2" size={16} /> Cancel
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              // View Mode
-              <div className="flex-grow">
-                <a href={`/${prompt.path}`}>{prompt.path}</a>
-              </div>
-            )}
+              ) : (
+                // View Mode
+                <div className="flex-grow">
+                  <Link prefetch={false} href={`/${prompt.path}`} className="text-blue-600 hover:underline">
+                    {prompt.path}
+                  </Link>
+                </div>
+              )}
 
-            {/* Action Buttons */}
-            {editingPrompt?.path !== prompt.path && (
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handleEdit(prompt)}
-                  className="text-blue-500 hover:bg-blue-100 p-2 rounded"
-                >
-                  <Edit size={20} />
-                </button>
-                <button
-                  onClick={() => deletePrompt(prompt.path)}
-                  className="text-red-500 hover:bg-red-100 p-2 rounded"
-                >
-                  <Trash2 size={20} />
-                </button>
-              </div>
-            )}
-          </div>
+              {/* Action Buttons */}
+              {editingPrompt?.path !== prompt.path && (
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleEdit(prompt)}
+                  >
+                    <Edit size={16} />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => {
+                          setPromptToDelete(prompt.path);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete the prompt "{prompt.path}".
+                          This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deletePrompt(promptToDelete!)}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
